@@ -1,0 +1,32 @@
+name: Greeting on Push
+
+on:
+  push:
+    branches: [ main ] # Trigger this workflow on pushes to the main branch
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Get commit author
+        id: commit_info
+        run: |
+          echo "AUTHOR=$(git log -1 --pretty=format:'%an')" >> "$GITHUB_OUTPUT"
+      - name: Post greeting comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const github = require('@actions/github');
+            const context = github.context;
+            const author = context.payload.head_commit.author.name;
+            const message = `Hello ${author}! Thanks for your contribution!`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.commits[0].id,
+              body: message
+            });
